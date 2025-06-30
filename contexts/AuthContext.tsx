@@ -13,19 +13,21 @@ interface User {
 interface AuthContextType {
   user: User;
   signOut: () => void;
+  login: (token: string, userData: User) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: {
-    name: "",
-    avatar: "",
-    degree: "",
+    name: '',
+    avatar: '',
+    degree: '',
     modules: [],
     todayModules: 0,
     confirmedPresences: 0,
-    currentSalary: 0
+    currentSalary: 0,
   },
-  signOut: () => {}
+  signOut: () => {},
+  login: async () => {},
 });
 
 export function AuthProvider({ children }: React.PropsWithChildren<object>) {
@@ -44,11 +46,13 @@ export function AuthProvider({ children }: React.PropsWithChildren<object>) {
     console.log("Usuário deslogado");
   };
 
-  return (
-    <AuthContext.Provider value={{ user, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const login = async (token: string, userData: User) => {
+    // Implementação real faria login
+    setUser(userData);
+    console.log("Usuário logado com token:", token);
+  };
+
+  return <AuthContext.Provider value={{ user, login, signOut }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

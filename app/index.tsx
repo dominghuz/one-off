@@ -1,49 +1,63 @@
 import { useEffect, useState } from "react";
-import { Link, Redirect } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // Não se esqueça de instalar a dependência
+import { Redirect } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ActivityIndicator, View } from "react-native";
+import { useColorScheme } from '~/lib/useColorScheme';
 
 export default function Index() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [authState, setAuthState] = useState<{
+    isAuthenticated: boolean | null;
+    hasCompletedOnboarding: boolean | null;
+  }>({ 
+    isAuthenticated: null, 
+    hasCompletedOnboarding: null 
+  });
+
+  const { colors } = useColorScheme();
 
   useEffect(() => {
-    const checkAuthentication = async () => {
+    const checkInitialState = async () => {
       try {
-        // Verifica se existe um token de autenticação no AsyncStorage
-        const token = await AsyncStorage.getItem("authToken");
-        setIsAuthenticated(!!token); // Se existir um token, o usuário está autenticado
+        const [token, onboardingCompleted] = await Promise.all([
+          AsyncStorage.getItem("authToken"),
+          AsyncStorage.getItem("onboardingCompleted")
+        ]);
+
+        setAuthState({
+          isAuthenticated: !!token,
+          hasCompletedOnboarding: onboardingCompleted === "true"
+        });
       } catch (error) {
-        console.error("Erro ao verificar autenticação:", error);
-        setIsAuthenticated(false); // Se ocorrer um erro, considerar como não autenticado
+        console.error("Error checking auth state:", error);
+        setAuthState({
+          isAuthenticated: false,
+          hasCompletedOnboarding: false
+        });
       }
     };
 
-    checkAuthentication();
+    checkInitialState();
   }, []);
 
-  if (isAuthenticated === null) {
-    return null; // Evita renderizar antes da verificação
+  if (authState.isAuthenticated === null || authState.hasCompletedOnboarding === null) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
-  // Faz o redirecionamento de acordo com o status da autenticação
+  // Fluxo de navegação inicial
+  if (!authState.hasCompletedOnboarding) {
+    return <Redirect href="/onboarding" />;
+  }
+
+  // Rota para demonstração de componentes (apenas em desenvolvimento)
+  // if (__DEV__ && authState.isAuthenticated) {
+  //   return <Redirect href="/components-demo" />;
+  // }
+
   return (
-    // <Redirect 
-    // <Link href={"/(tabs)/home"}
-    //   className="flex-1 items-center justify-center"
-    //   >
-    //   Redirecting...
-    // </Link>
-    // <Link href={isAuthenticated ? "/(tabs)/home" : "/(auth)/login"}>
-    //   Redirecting...
-    // </Link>
-    <Redirect
-      href={isAuthenticated ? "/(root)/(tabs)/home" : "/(root)/(tabs)/home"}
-    />
-    // // <Link href={isAuthenticated ? "/(tabs)/home" : "/(auth)/login"}>
-    // //   Redirecting... 
-    // <Link href={'/(tabs)/home'}>
-
-    // </Link>
-
-
+    <Redirect href={authState.isAuthenticated ? '/(tabs)/home' : '/(auth)/login' as const} />
   );
 }

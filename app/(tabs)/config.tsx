@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 
 import { View, Text, ScrollView, TouchableOpacity, Switch } from "react-native";
 import { MaterialIcons, Feather, Ionicons, FontAwesome } from '@expo/vector-icons';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function ConfigScreen() {
   const { user, signOut } = useAuth();

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 
 const ProfileCard = ({ icon, title, value }) => (

@@ -1,6 +1,6 @@
 import { View, Text, Image, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
-import { useAuth } from '../../../contexts/AuthContext';
-import { useScan } from '../../../hooks/useScan';
+import { useAuth } from '../../contexts/AuthContext';
+import { useScan } from '../../hooks/useScan';
 
 // Componentes reutilizáveis
 type UserHeaderProps = {
