@@ -9,7 +9,7 @@ export default function Index() {
   const [authState, setAuthState] = useState<{
     isAuthenticated: boolean | null;
     hasCompletedOnboarding: boolean | null;
-    userType: 'professor' | 'coordinator' | null;
+    userType: 'professor' | 'coordenador' | null;
   }>({ 
     isAuthenticated: null, 
     hasCompletedOnboarding: null,
@@ -30,12 +30,12 @@ export default function Index() {
         ]);
 
         // Determine user type from token
-        let userType: 'professor' | 'coordinator' | null = null;
+        let userType: 'professor' | 'coordenador' | null = null;
         if (token) {
           if (token.startsWith('professor-')) {
             userType = 'professor';
           } else if (token.startsWith('coordinator-')) {
-            userType = 'coordinator';
+            userType = 'coordenador';
           }
         }
 
@@ -72,7 +72,7 @@ export default function Index() {
 
   // If authenticated, redirect based on user type
   if (authState.isAuthenticated && authState.userType) {
-    if (authState.userType === 'coordinator') {
+    if (authState.userType === 'coordenador') {
       return <Redirect href="/(coordinator)/dashboard" />;
     } else {
       return <Redirect href="/(tabs)/home" />;
@@ -82,4 +82,3 @@ export default function Index() {
   // Not authenticated, go to login
   return <Redirect href="/(auth)/login" />;
 }
-
