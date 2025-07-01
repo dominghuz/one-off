@@ -10,6 +10,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { useColorScheme, useInitialAndroidBarSync } from '~/lib/useColorScheme';
 import { NAV_THEME } from '~/theme';
 import { ActivityIndicator, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { initializeDatabase } from '../lib/database';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -17,7 +20,33 @@ export default function RootLayout() {
   useInitialAndroidBarSync();
   const { colorScheme, isDarkColorScheme } = useColorScheme();
   const { user } = useAuth();
-  const isLoading = false; // Replace with actual loading logic if available
+  const [isLoading, setIsLoading] = useState(true);
+  const [userType, setUserType] = useState<'professor' | 'coordinator' | null>(null);
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Initialize database
+        await initializeDatabase();
+        
+        // Check user type from auth token
+        const token = await AsyncStorage.getItem('authToken');
+        if (token) {
+          if (token.startsWith('coordinator-') || token.startsWith('coord-token-')) {
+            setUserType('coordinator');
+          } else if (token.startsWith('professor-') || token.startsWith('prof-token-')) {
+            setUserType('professor');
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing app:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeApp();
+  }, []);
 
   if (isLoading) {
     return (
@@ -40,16 +69,20 @@ export default function RootLayout() {
             <NavThemeProvider value={NAV_THEME[colorScheme]}>
               <Stack screenOptions={{ 
                 headerShown: false,
-                animation: 'ios_from_right' // for android
+                animation: 'ios_from_right'
               }}>
                 {/* Rotas públicas */}
-                <Stack.Screen name="/onboarding" />
+                <Stack.Screen name="onboarding" />
                 <Stack.Screen name="(auth)" />
                 
                 {/* Rotas protegidas */}
                 {user && (
                   <>
-                    <Stack.Screen name="(tabs)" />
+                    {userType === 'coordinator' ? (
+                      <Stack.Screen name="(coordinator)" />
+                    ) : (
+                      <Stack.Screen name="(tabs)" />
+                    )}
                     <Stack.Screen 
                       name="modal" 
                       options={{ 
