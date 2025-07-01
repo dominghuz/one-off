@@ -1,6 +1,15 @@
-import { View, Text, Image, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+  ScrollView,
+  Dimensions,
+} from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useScan } from '../../hooks/useScan';
+import { QRScanner } from '../../components/QRScanner';
 
 // Componentes reutilizáveis
 type UserHeaderProps = {
@@ -16,7 +25,11 @@ const UserHeader = ({ user, onSignOut }: UserHeaderProps) => (
         className="h-12 w-12 rounded-full border-2 border-green-500"
       />
       <View className="ml-3">
-        <Text className="text-lg font-bold" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: Dimensions.get('window').width * 0.5 }}>
+        <Text
+          className="text-lg font-bold"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          style={{ maxWidth: Dimensions.get('window').width * 0.5 }}>
           {user?.name || 'Professor'}
         </Text>
         <Text className="text-sm text-gray-500">
@@ -45,7 +58,7 @@ const StatusCard = ({ user }: StatusCardProps) => (
       {[
         { label: 'Módulos', value: `${user?.todayModules || 0}/3` },
         { label: 'Presenças', value: user?.confirmedPresences || 0 },
-        { label: 'Salário', value: `${user?.currentSalary?.toLocaleString('pt-AO') || 0} KZ` }
+        { label: 'Salário', value: `${user?.currentSalary?.toLocaleString('pt-AO') || 0} KZ` },
       ].map((item, index) => (
         <View key={index} className="items-center px-2">
           <Text className="text-gray-500">{item.label}</Text>
@@ -58,13 +71,12 @@ const StatusCard = ({ user }: StatusCardProps) => (
 
 const ScannerFrame = () => {
   const scannerSize = Dimensions.get('window').width * 0.7;
-  
+
   return (
     <View className="relative mb-8 items-center justify-center">
-      <View 
+      <View
         className="items-center justify-center rounded-lg border-4 border-green-500 bg-gray-100"
-        style={{ height: scannerSize, width: scannerSize }}
-      >
+        style={{ height: scannerSize, width: scannerSize }}>
         <Image
           source={{
             uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/QR_Code_Example.svg/1200px-QR_Code_Example.svg.png',
@@ -76,10 +88,13 @@ const ScannerFrame = () => {
         <View
           key={position}
           className={`absolute h-12 w-12 border-green-500 ${
-            position === 'top-left' ? 'left-0 top-0 rounded-tl-lg border-l-2 border-t-2' :
-            position === 'top-right' ? 'right-0 top-0 rounded-tr-lg border-r-2 border-t-2' :
-            position === 'bottom-left' ? 'left-0 bottom-0 rounded-bl-lg border-b-2 border-l-2' :
-            'right-0 bottom-0 rounded-br-lg border-b-2 border-r-2'
+            position === 'top-left'
+              ? 'left-0 top-0 rounded-tl-lg border-l-2 border-t-2'
+              : position === 'top-right'
+                ? 'right-0 top-0 rounded-tr-lg border-r-2 border-t-2'
+                : position === 'bottom-left'
+                  ? 'bottom-0 left-0 rounded-bl-lg border-b-2 border-l-2'
+                  : 'bottom-0 right-0 rounded-br-lg border-b-2 border-r-2'
           }`}
         />
       ))}
@@ -88,7 +103,11 @@ const ScannerFrame = () => {
 };
 
 type ConfirmationModalProps = {
-  scanResult: { module: string; time: string };
+  scanResult: {
+    module: string;
+    time: string;
+    classroom?: string;
+  };
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -96,19 +115,23 @@ type ConfirmationModalProps = {
 const ConfirmationModal = ({ scanResult, onConfirm, onCancel }: ConfirmationModalProps) => (
   <View className="w-full items-center rounded-xl bg-white p-6">
     <Text className="mb-2 text-lg font-bold">Confirmação de Presença</Text>
-    <Text className="mb-4 text-center">
-      Módulo: {scanResult.module} - {scanResult.time}
-    </Text>
-    <TouchableOpacity
-      onPress={onConfirm}
-      className="mb-2 w-full rounded-lg bg-green-500 py-3"
-    >
+    <View className="mb-2 flex-row justify-center">
+      <Text className="font-semibold">Módulo: </Text>
+      <Text>{scanResult.module}</Text>
+    </View>
+    <View className="mb-2 flex-row justify-center">
+      <Text className="font-semibold">Período: </Text>
+      <Text>{scanResult.time}</Text>
+    </View>
+    {scanResult.classroom && (
+      <Text className="mb-4 text-center">
+        <Text className="font-semibold">Sala:</Text> {scanResult.classroom}
+      </Text>
+    )}
+    <TouchableOpacity onPress={onConfirm} className="mb-2 w-full rounded-lg bg-green-500 py-3">
       <Text className="text-center font-bold text-white">Confirmar Presença</Text>
     </TouchableOpacity>
-    <TouchableOpacity
-      onPress={onCancel}
-      className="w-full rounded-lg border border-gray-300 py-3"
-    >
+    <TouchableOpacity onPress={onCancel} className="w-full rounded-lg border border-gray-300 py-3">
       <Text className="text-center text-gray-700">Cancelar</Text>
     </TouchableOpacity>
   </View>
@@ -122,29 +145,23 @@ export default function HomeScreen() {
     scanResult,
     setScanResult,
     handleScanPress,
+    handleBarcodeScanned,
     handleConfirmPresence,
+    handleCloseScan,
     scanError,
-    setScanError
+    setScanError,
   } = useScan();
 
-  return (
-    <ScrollView 
-      contentContainerStyle={{ flexGrow: 1 }} 
-      keyboardShouldPersistTaps="handled"
-    >
+return (
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
       <View className="flex-1 bg-gray-50 p-6">
         <UserHeader user={user} onSignOut={signOut} />
         <StatusCard user={user} />
 
         {/* Área principal de scan */}
         <View className="flex-1 items-center justify-center">
-          {isScanning ? (
-            <View className="items-center">
-              <ActivityIndicator size="large" color="#10B981" />
-              <Text className="mt-4 text-gray-700">Aproxime o QR Code da câmera</Text>
-            </View>
-          ) : scanResult ? (
-            <ConfirmationModal 
+          {scanResult ? (
+            <ConfirmationModal
               scanResult={scanResult}
               onConfirm={handleConfirmPresence}
               onCancel={() => setScanResult(null)}
@@ -154,7 +171,8 @@ export default function HomeScreen() {
               <View className="mb-8 items-center">
                 <Text className="mb-2 text-xl font-bold">Registo de Presença</Text>
                 <Text className="px-8 text-center text-gray-500">
-                  Escaneie o QR Code disponível na sala de aula para registar sua presença no módulo atual.
+                  Escaneie o QR Code disponível na sala de aula para registar sua presença no módulo
+                  atual.
                 </Text>
               </View>
 
@@ -162,19 +180,32 @@ export default function HomeScreen() {
 
               <TouchableOpacity
                 onPress={handleScanPress}
-                className="w-full rounded-lg bg-green-500 py-4 shadow-md"
-              >
-                <Text className="text-center text-lg font-bold text-white">Iniciar Escaneamento</Text>
+                className="w-full rounded-lg bg-green-500 py-4 shadow-md">
+                <Text className="text-center text-lg font-bold text-white">
+                  Iniciar Escaneamento
+                </Text>
               </TouchableOpacity>
             </>
           )}
 
           {scanError && (
             <View className="mt-4 w-full rounded-lg bg-red-100 p-3">
-              <Text className="text-center text-red-700">{scanError}</Text>
+              <Text className="text-center text-red-700">
+                {typeof scanError === 'string' ? scanError : JSON.stringify(scanError)}
+              </Text>
+              <TouchableOpacity onPress={() => setScanError(null)} className="mt-2">
+                <Text className="text-center text-red-500 underline">Fechar</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
+
+        {/* Modal do QR Scanner */}
+        <QRScanner 
+          visible={isScanning}
+          onBarcodeScanned={handleBarcodeScanned}
+          onClose={handleCloseScan}
+        />
 
         {/* Rodapé */}
         <View className="border-t border-gray-200 pt-4">

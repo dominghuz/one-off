@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["reactNative"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./app.db"
+}
+
+model Professor {
+  id           Int     @id @default(autoincrement())
+  nome         String
+  email        String  @unique
+  senha        String
+  nivelAcademico String // "licenciado", "mestre", "doutor"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relacionamento com presenças
+  presencas    Presenca[]
+}
+
+model Presenca {
+  id           Int      @id @default(autoincrement())
+  professorId  Int
+  modulo       String   // "Matemática", "Física", "Química"
+  periodo      String   // "Manhã", "Tarde", "Noite"
+  horarioEntrada DateTime
+  atraso       Boolean  @default(false)
+  horasAjustadas Float
+  createdAt    DateTime @default(now())
+  
+  // Relacionamento com professor
+  professor    Professor @relation(fields: [professorId], references: [id])
+}
+
+model Relatorio {
+  id           Int      @id @default(autoincrement())
+  professorId  Int
+  periodo      String   // "Semanal", "Mensal", "Anual"
+  dataInicio   DateTime
+  dataFim      DateTime
+  totalHoras   Float
+  salarioTotal Float
+  createdAt    DateTime @default(now())
+}
+

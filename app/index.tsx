@@ -3,14 +3,17 @@ import { Redirect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ActivityIndicator, View } from "react-native";
 import { useColorScheme } from '~/lib/useColorScheme';
+import { initializeDatabase } from '../lib/database';
 
 export default function Index() {
   const [authState, setAuthState] = useState<{
     isAuthenticated: boolean | null;
     hasCompletedOnboarding: boolean | null;
+    userType: 'professor' | 'coordinator' | null;
   }>({ 
     isAuthenticated: null, 
-    hasCompletedOnboarding: null 
+    hasCompletedOnboarding: null,
+    userType: null
   });
 
   const { colors } = useColorScheme();
@@ -18,20 +21,35 @@ export default function Index() {
   useEffect(() => {
     const checkInitialState = async () => {
       try {
+        // Initialize database first
+        await initializeDatabase();
+
         const [token, onboardingCompleted] = await Promise.all([
           AsyncStorage.getItem("authToken"),
           AsyncStorage.getItem("onboardingCompleted")
         ]);
 
+        // Determine user type from token
+        let userType: 'professor' | 'coordinator' | null = null;
+        if (token) {
+          if (token.startsWith('professor-')) {
+            userType = 'professor';
+          } else if (token.startsWith('coordinator-')) {
+            userType = 'coordinator';
+          }
+        }
+
         setAuthState({
           isAuthenticated: !!token,
-          hasCompletedOnboarding: onboardingCompleted === "true"
+          hasCompletedOnboarding: onboardingCompleted === "true",
+          userType
         });
       } catch (error) {
         console.error("Error checking auth state:", error);
         setAuthState({
           isAuthenticated: false,
-          hasCompletedOnboarding: false
+          hasCompletedOnboarding: false,
+          userType: null
         });
       }
     };
@@ -52,12 +70,16 @@ export default function Index() {
     return <Redirect href="/onboarding" />;
   }
 
-  // Rota para demonstração de componentes (apenas em desenvolvimento)
-  // if (__DEV__ && authState.isAuthenticated) {
-  //   return <Redirect href="/components-demo" />;
-  // }
+  // If authenticated, redirect based on user type
+  if (authState.isAuthenticated && authState.userType) {
+    if (authState.userType === 'coordinator') {
+      return <Redirect href="/(coordinator)/dashboard" />;
+    } else {
+      return <Redirect href="/(tabs)/home" />;
+    }
+  }
 
-  return (
-    <Redirect href={authState.isAuthenticated ? '/(tabs)/home' : '/(auth)/login' as const} />
-  );
+  // Not authenticated, go to login
+  return <Redirect href="/(auth)/login" />;
 }
+
